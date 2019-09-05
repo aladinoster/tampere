@@ -1,3 +1,2 @@
-python==3.6
 numpy==1.16
 bokeh==1.3
