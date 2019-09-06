@@ -8,6 +8,7 @@
 # ===============================================================================
 
 from itertools import count
+from typing import Optional
 
 # ===============================================================================
 # Constants
@@ -45,8 +46,8 @@ class VehicleTampere(object):
 
     def __init__(
         self,
-        init_pos: int,
-        init_spd: int,
+        init_pos: float,
+        init_spd: float,
         c_1: float = C_1,
         c_2: float = C_2,
         c_3: float = C_3,
@@ -72,55 +73,66 @@ class VehicleTampere(object):
 
         self.x_t = init_pos
         self.v_t = init_spd
-        self.a_t = 0
+        self.a_t = 0.0
 
         # Control acceleration (leader only)
-        self.a = 0
+        self.a = 0.0
 
         # Vehicle leader definition
         self._veh_lead = veh_lead
 
-        self.control = 0
+        self.control = 0.0
 
     @classmethod
-    def reset(cls):
+    def reset(cls) -> None:
         """
             This is a reset vehicle id.
         """
         cls.idx = count(0)
 
     @property
-    def u(self):
+    def u(self) -> float:
+        """
+            Free flow speed
+        """
         return U_I
 
     @property
-    def w(self):
+    def w(self) -> float:
+        """
+            Shockwave speed
+        """
         return W_I
 
     @property
-    def k_x(self):
+    def k_x(self) -> float:
+        """
+            Jam density
+        """
         return K_X
 
     @property
-    def Te(self):
-        return T_E
-
-    @property
-    def s0(self):
+    def s0(self) -> float:
+        """
+            Minimum spacing
+        """
         return 1 / self.k_x
 
     @property
-    def veh_lead(self):
+    def veh_lead(self) -> "VehicleTampere":
         """
-            Pointer towwards vehicle leader
+            Retrieve the pointer towards this vehicle's leader
         """
         return self._veh_lead
 
-    def set_leader(self, veh_lead):
+    def set_leader(self, veh_lead) -> None:
+        """
+            Set the leader of a vehicle 
+        """
         self._veh_lead = veh_lead
 
     @property
-    def dv(self):
+    def dv(self) -> float:
         """ 
             Determine current delta of speed
         """
@@ -128,31 +140,22 @@ class VehicleTampere(object):
             return self.veh_lead.v_t - self.v_t
         return 0
 
-    # @property
-    # def a(self, v_d=None):
-    #     """""
-    #         Dynamic equation acceleration
-    #     """
-    #     if self.idx != 0 and self.veh_lead:
-    #         return min(self.cong_acc(), self.free_acc(v_d))  # Car following
-    #     return self.control  # Leader vehicle
-
     @property
-    def v(self):
+    def v(self) -> float:
         """
             Dynamic equation speed
         """
         return self.v_t + self.a * DT
 
     @property
-    def x(self):
+    def x(self) -> float:
         """
             Dynamic equation position 
         """
         return self.x_t + self.v * DT  # Check carefully
 
     @property
-    def s(self):
+    def s(self) -> float:
         """
             Determine current spacing (X_n-1 - X_n)
         """
@@ -161,25 +164,25 @@ class VehicleTampere(object):
         return 0
 
     @property
-    def s_d(self):
+    def s_d(self) -> float:
         """
             Determine desired spacing  (d + gamma * v )
         """
         return self.s0 + 1 / (self.w * self.k_x) * self.v_t
 
-    def cong_acc(self):
+    def cong_acc(self) -> float:
         """
             Breaking term  c_1 (D V) + c_2 (s - s_d)
         """
         return self.c_1 * self.dv + self.c_2 * (self.s - self.s_d)
 
-    def free_acc(self, v_d):
+    def free_acc(self, v_d: float = U_I) -> float:
         """
             Acceleration term (Tampere) c_3 (v_d - v)
         """
         return self.c_3 * (v_d - self.v_t)
 
-    def car_following(self, v_d=None):
+    def car_following(self, v_d: float) -> None:
         """ 
             Acceleration car following 
             
@@ -203,7 +206,7 @@ class VehicleTampere(object):
         self.v_t = self.v
         self.a_t = self.a
 
-    def step_evolution(self, v_d=None, control=None) -> None:
+    def step_evolution(self, v_d: float, control: float = 0) -> None:
         """
             Use this method to a single step in the simulation
         """
